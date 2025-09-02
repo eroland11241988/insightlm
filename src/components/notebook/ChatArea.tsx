@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, Upload, FileText, Loader2, RefreshCw } from 'lucide-react';
+import { Send, Upload, FileText, Loader2, RefreshCw, Bug } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
@@ -11,6 +11,8 @@ import MarkdownRenderer from '@/components/chat/MarkdownRenderer';
 import SaveToNoteButton from './SaveToNoteButton';
 import AddSourcesDialog from './AddSourcesDialog';
 import { Citation } from '@/types/message';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChatAreaProps {
   hasSource: boolean;
@@ -37,6 +39,8 @@ const ChatArea = ({
   const [showAiLoading, setShowAiLoading] = useState(false);
   const [clickedQuestions, setClickedQuestions] = useState<Set<string>>(new Set());
   const [showAddSourcesDialog, setShowAddSourcesDialog] = useState(false);
+  const [isRunningDiagnostics, setIsRunningDiagnostics] = useState(false);
+  const { toast } = useToast();
   
   const isGenerating = notebook?.generation_status === 'generating';
   
@@ -111,8 +115,58 @@ const ChatArea = ({
         // Clear pending message on error
         setPendingUserMessage(null);
         setShowAiLoading(false);
+  const runDiagnostics = async () => {
+    if (!notebookId) return;
+    
+    setIsRunningDiagnostics(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('chat-diagnostics', {
+        body: { notebookId }
+      });
+
+      if (error) {
+        console.error('Diagnostics error:', error);
+        toast({
+          title: "Diagnostics Failed",
+          description: "Could not run diagnostics. Check the console for details.",
+          variant: "destructive"
+        });
+        return;
       }
+      }
+      console.log('=== CHAT DIAGNOSTICS REPORT ===');
+      console.log('Overall Status:', data.overallStatus);
+      console.log('Environment Check:', data.environment);
+      console.log('Notebook Check:', data.notebook);
+      console.log('Sources Check:', data.sources);
+      console.log('Vector Store Check:', data.vectorStore);
+      console.log('Chat History Check:', data.chatHistory);
+      console.log('Recommendations:', data.recommendations);
+      console.log('=== END DIAGNOSTICS REPORT ===');
     }
+      if (data.overallStatus === 'HEALTHY') {
+        toast({
+          title: "Diagnostics Complete",
+          description: "No issues found. Check console for full report.",
+        });
+      } else {
+        toast({
+          title: "Issues Found",
+          description: `${data.recommendations.length} issue(s) detected. Check console for details.`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Diagnostics failed:', error);
+      toast({
+        title: "Diagnostics Failed",
+        description: "Could not run diagnostics. Check the console for details.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRunningDiagnostics(false);
+    }
+  };
   };
   const handleRefreshChat = () => {
     if (notebookId) {
@@ -172,10 +226,30 @@ const ChatArea = ({
           <div className="p-4 border-b border-gray-200 flex-shrink-0">
             <div className="max-w-4xl mx-auto flex items-center justify-between">
               <h2 className="text-lg font-medium text-gray-900">Chat</h2>
-              {shouldShowRefreshButton && <Button variant="ghost" size="sm" onClick={handleRefreshChat} disabled={isDeletingChatHistory || isChatDisabled} className="flex items-center space-x-2">
-                  <RefreshCw className={`h-4 w-4 ${isDeletingChatHistory ? 'animate-spin' : ''}`} />
-                  <span>{isDeletingChatHistory ? 'Clearing...' : 'Clear Chat'}</span>
-                </Button>}
+              <div className="flex items-center space-x-2">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={runDiagnostics}
+                  disabled={isRunningDiagnostics}
+                  className="flex items-center space-x-2"
+                >
+                  <Bug className={`h-4 w-4 ${isRunningDiagnostics ? 'animate-spin' : ''}`} />
+                  <span>{isRunningDiagnostics ? 'Running...' : 'Debug'}</span>
+                </Button>
+                {shouldShowRefreshButton && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleRefreshChat} 
+                    disabled={isDeletingChatHistory || isChatDisabled} 
+                    className="flex items-center space-x-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isDeletingChatHistory ? 'animate-spin' : ''}`} />
+                    <span>{isDeletingChatHistory ? 'Clearing...' : 'Clear Chat'}</span>
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 

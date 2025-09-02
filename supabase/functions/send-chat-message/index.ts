@@ -201,6 +201,58 @@ serve(async (req) => {
     const webhookData = await webhookResponse.text();
     console.log('n8n webhook response received successfully');
 
+    // Try to parse the webhook response to check for errors
+    try {
+      const parsedResponse = JSON.parse(webhookData);
+      console.log('Parsed n8n response:', parsedResponse);
+      
+      // Check if the response indicates an error
+      if (parsedResponse.error || 
+          (parsedResponse.output && parsedResponse.output.some((item: any) => 
+            item.text && item.text.includes('Sorry, I encountered an error')))) {
+        console.error('n8n workflow returned an error response:', parsedResponse);
+        
+        // Save a more helpful error message
+        await supabaseClient
+          .from('n8n_chat_histories')
+          .insert({
+            session_id,
+            message: {
+              type: 'ai',
+              content: JSON.stringify({
+                output: [{
+                  text: `I'm having trouble accessing your sources right now. This could be due to:\n\n1. **Sources still processing** - Please wait for all sources to finish processing\n2. **n8n workflow configuration** - Check your n8n Chat workflow credentials and connections\n3. **Vector store issues** - Verify your Supabase vector store is properly configured\n4. **Missing API keys** - Ensure OpenAI and other required API keys are set in n8n\n\nPlease check your n8n workflow logs for more details.`,
+                  citations: []
+                }]
+              }),
+              additional_kwargs: {},
+              response_metadata: { 
+                error: true, 
+                n8n_response: parsedResponse,
+                timestamp: new Date().toISOString()
+              }
+            }
+          })
+        
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'n8n workflow returned an error',
+            details: 'Check the chat for debugging information',
+            n8n_response: parsedResponse
+          }),
+          { 
+            status: 500,
+            headers: { 
+              ...corsHeaders,
+              'Content-Type': 'application/json' 
+            } 
+          }
+        );
+      }
+    } catch (parseError) {
+      console.log('Could not parse n8n response as JSON, treating as success:', parseError);
+    }
     return new Response(
       JSON.stringify({ 
         success: true, 
