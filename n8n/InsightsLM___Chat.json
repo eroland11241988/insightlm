@@ -147,7 +147,7 @@
             },
             {
               "fieldId": "message",
-              "fieldValue": "{\"type\": \"ai\", \"content\": \"{\\\"output\\\":[{\\\"text\\\":\\\"Sorry, I encountered an error creating a response. Please check the error log.\\\",\\\"citations\\\":[]}]}\", \"tool_calls\": [], \"additional_kwargs\": {}, \"response_metadata\": {}, \"invalid_tool_calls\": []}"
+              "fieldValue": "={\"type\": \"ai\", \"content\": JSON.stringify({\"output\":[{\"text\":\"I'm having trouble accessing the knowledge base right now. This could be due to: 1) No sources have been processed yet, 2) Vector store connection issues, or 3) Missing API credentials. Please check that your sources are fully processed and try again. Error details: \" + ($('AI Agent').item.json.error || 'Unknown error'), \"citations\":[]}]}), \"tool_calls\": [], \"additional_kwargs\": {}, \"response_metadata\": {\"error\": true, \"timestamp\": $now.toISO()}, \"invalid_tool_calls\": []}"
             }
           ]
         }
