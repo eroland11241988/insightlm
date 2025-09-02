@@ -115,6 +115,10 @@ const ChatArea = ({
         // Clear pending message on error
         setPendingUserMessage(null);
         setShowAiLoading(false);
+      }
+    }
+  };
+
   const runDiagnostics = async () => {
     if (!notebookId) return;
     
@@ -133,7 +137,7 @@ const ChatArea = ({
         });
         return;
       }
-      }
+
       console.log('=== CHAT DIAGNOSTICS REPORT ===');
       console.log('Overall Status:', data.overallStatus);
       console.log('Environment Check:', data.environment);
@@ -143,7 +147,7 @@ const ChatArea = ({
       console.log('Chat History Check:', data.chatHistory);
       console.log('Recommendations:', data.recommendations);
       console.log('=== END DIAGNOSTICS REPORT ===');
-    }
+
       if (data.overallStatus === 'HEALTHY') {
         toast({
           title: "Diagnostics Complete",
@@ -167,7 +171,7 @@ const ChatArea = ({
       setIsRunningDiagnostics(false);
     }
   };
-  };
+
   const handleRefreshChat = () => {
     if (notebookId) {
       console.log('Refresh button clicked for notebook:', notebookId);
@@ -176,9 +180,11 @@ const ChatArea = ({
       setClickedQuestions(new Set());
     }
   };
+
   const handleCitationClick = (citation: Citation) => {
     onCitationClick?.(citation);
   };
+
   const handleExampleQuestionClick = (question: string) => {
     // Add question to clicked set to remove it from display
     setClickedQuestions(prev => new Set(prev).add(question));
@@ -216,10 +222,7 @@ const ChatArea = ({
         return "Upload a source to get started...";
       } else {
         return "Please wait while your sources are being processed...";
-      }
     }
-    return "Start typing...";
-  };
   return <div className="flex-1 flex flex-col h-full overflow-hidden">
       {hasSource ? <div className="flex-1 flex flex-col h-full overflow-hidden">
           {/* Chat Header */}
