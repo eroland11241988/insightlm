@@ -222,7 +222,11 @@ const ChatArea = ({
         return "Upload a source to get started...";
       } else {
         return "Please wait while your sources are being processed...";
+      }
     }
+    return "Type your message here...";
+  };
+
   return <div className="flex-1 flex flex-col h-full overflow-hidden">
       {hasSource ? <div className="flex-1 flex flex-col h-full overflow-hidden">
           {/* Chat Header */}
@@ -274,7 +278,7 @@ const ChatArea = ({
                 
                 <div className="bg-gray-50 rounded-lg p-6 mb-6">
                   {isGenerating ? <div className="flex items-center space-x-2 text-gray-600">
-                      
+                      <Loader2 className="h-4 w-4 animate-spin" />
                       <p>AI is analyzing your source and generating a title and description...</p>
                     </div> : <MarkdownRenderer content={notebook?.description || 'No description available for this notebook.'} className="prose prose-gray max-w-none text-gray-700 leading-relaxed" />}
                 </div>
